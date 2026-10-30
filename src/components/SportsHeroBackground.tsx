@@ -26,7 +26,7 @@ export function SportsHeroBackground() {
   const scene = heroScenes[activeScene];
 
   return (
-    <div className="sports-hero-bg" aria-label="Four-sport cinematic hero background">
+    <div className="sports-hero-bg" aria-label="Six-sport cinematic hero background">
       <AnimatePresence initial={false}>
         <motion.div key={activeScene} className="sports-hero-scene" style={{ backgroundColor: scene.fallback }} initial={{ opacity: reduceMotion ? 1 : 0 }} animate={{ opacity: 1 }} exit={{ opacity: reduceMotion ? 1 : 0 }} transition={{ duration: reduceMotion ? 0 : 1.15, ease: 'easeInOut' }}>
           <motion.img
@@ -49,7 +49,7 @@ export function SportsHeroBackground() {
       <div className="sports-hero-light streak-orange" />
       <div className="scene-indicators" role="tablist" aria-label="Hero sports scenes">
         {heroScenes.map((item, index) => (
-          <button key={item.label} type="button" role="tab" aria-selected={index === activeScene} className={index === activeScene ? 'active' : ''} onClick={() => selectScene(index)}>
+          <button key={item.label} type="button" role="tab" aria-label={item.label} aria-selected={index === activeScene} className={index === activeScene ? 'active' : ''} onClick={() => selectScene(index)}>
             <span>{item.label}</span><i><b key={`${activeScene}-${index}`} /></i>
           </button>
         ))}
