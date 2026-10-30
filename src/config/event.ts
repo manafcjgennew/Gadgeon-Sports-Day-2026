@@ -3,5 +3,5 @@ export const eventConfig = {
   venue: 'Gadgeon Campus (venue placeholder)',
   registrationUrl: '',
   contactEmail: 'sportsday@gadgeon.com (placeholder)',
-  logoUrl: 'https://www.gadgeon.com/web/images/apple-touch-icon-180x180.png',
+  logoUrl: '/gadgeon-icon.png',
 };

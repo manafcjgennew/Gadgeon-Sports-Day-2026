@@ -1,75 +1,59 @@
-# React + TypeScript + Vite
+# Gadgeon Sports Day 2026
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Production website for Gadgeon Sports Day 2026, built with React, TypeScript, Vite, Framer Motion, and Tailwind CSS.
 
-Currently, two official plugins are available:
+## Local development
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Open the Vite local URL shown in the terminal.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Production verification
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm run lint
+npm run build
+npm run preview
 ```
+
+The production build is written to `dist/`.
+
+## Deploy to GitHub and Vercel
+
+### GitHub
+
+```bash
+git init
+git add .
+git commit -m "Prepare Gadgeon Sports Day 2026 for production"
+git branch -M main
+git remote add origin <YOUR_GITHUB_REPOSITORY_URL>
+git push -u origin main
+```
+
+### Vercel dashboard
+
+1. Import the GitHub repository.
+2. Framework Preset: **Vite**.
+3. Root Directory: repository root.
+4. Build Command: `npm run build`.
+5. Output Directory: `dist`.
+6. Install Command: `npm install`.
+7. No environment variables are currently required.
+8. Deploy the `main` branch.
+
+A `vercel.json` file is included to configure SPA routing and image caching.
+
+## Updating the event
+
+- Event date, location, registration link, and branding: `src/config/event.ts`
+- Hero scene images: `src/config/heroScenes.ts`
+- Schedule, gaming, athletics, gallery, and demo leaderboard data: `src/data/tournament.ts`
+- Keep event and team data clearly marked as placeholders until officially confirmed.
+
+## Assets
+
+Sports images and the Gadgeon icon are served from `public/` and use deployment-safe paths beginning with `/`.
