@@ -95,7 +95,13 @@ VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY
 VITE_TURNSTILE_SITE_KEY=YOUR_CLOUDFLARE_TURNSTILE_SITE_KEY
 ```
 
-Set the same public variables in Vercel. Configure the Cloudflare widget domain to include `localhost` for local testing and the Vercel production domain.
+Configure the same public variables in Vercel. Configure the Cloudflare widget domains to include `localhost`, `127.0.0.1`, and the Vercel production hostname. Configure the Edge Function hostname allowlist separately:
+
+```text
+TURNSTILE_HOSTNAMES=localhost,127.0.0.1,your-production-domain.com
+```
+
+Do not include local hostnames in production's hostname allowlist. Remove or omit `TURNSTILE_HOSTNAMES` only for temporary local testing; production should always use an explicit allowlist.
 
 ### Cloudflare setup
 
@@ -109,13 +115,16 @@ Set the same public variables in Vercel. Configure the Cloudflare widget domain 
 
 ```bash
 npx supabase login
-npx supabase link --project-ref YOUR_PROJECT_REF
+npx supabase link --project-ref lefarzlvgkxsbkljdkhk
+
+npx supabase secrets set TURNSTILE_SECRET_KEY=YOUR_TURNSTILE_SECRET_KEY
+npx supabase secrets set TURNSTILE_HOSTNAMES=localhost,127.0.0.1
+
 npx supabase db push
 npx supabase functions deploy register-sports-day --no-verify-jwt
-npx supabase secrets set TURNSTILE_SECRET_KEY=YOUR_TURNSTILE_SECRET_KEY SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SERVICE_ROLE_KEY
 ```
 
-Only `TURNSTILE_SECRET_KEY` and `SUPABASE_SERVICE_ROLE_KEY` belong on the backend. Never add either value to Vite environment variables or frontend source files.
+Set only the Turnstile secrets explicitly. Supabase automatically supplies Edge Function variables such as `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`; names beginning with `SUPABASE_` cannot be set manually through `supabase secrets set`. Never add the service-role or Turnstile secret to Vite environment variables or frontend source files.
 
 The migration removes INSERT policies for browser roles, revokes direct INSERT access from `anon` and `authenticated`, enables RLS, and creates a unique `(email, event_name)` index. Do not restore a public INSERT policy.
 

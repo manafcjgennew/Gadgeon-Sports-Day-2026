@@ -21,8 +21,9 @@ export function loadTurnstile(): Promise<void> {
 }
 
 export interface TurnstileWidget {
-  render(container: string | HTMLElement, options: { sitekey: string; theme?: 'light' | 'dark' | 'auto'; appearance?: 'always' | 'execute' | 'interaction-only'; callback: (token: string) => void; 'expired-callback': () => void; 'error-callback': () => void }): string;
+  render(container: string | HTMLElement, options: { sitekey: string; action?: string; theme?: 'light' | 'dark' | 'auto'; appearance?: 'always' | 'execute' | 'interaction-only'; callback: (token: string, preClearanceObtained?: boolean) => void; 'expired-callback': () => void; 'error-callback': () => void }): string;
   reset(widgetId?: string): void;
+  remove(widgetId?: string): void;
 }
 
 declare global {
