@@ -97,6 +97,8 @@ VITE_TURNSTILE_SITE_KEY=YOUR_CLOUDFLARE_TURNSTILE_SITE_KEY
 
 Configure the same public variables in Vercel. Configure the Cloudflare widget domains to include `localhost`, `127.0.0.1`, and the Vercel production hostname. Configure the Edge Function hostname allowlist separately:
 
+For existing Vercel deployments, the Vite build also accepts the public Supabase values from `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, or `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`. A plain `SUPABASE_URL` plus a plain `SUPABASE_ANON_KEY` or `SUPABASE_PUBLISHABLE_KEY` is also supported. Service-role and secret keys are never read by the frontend build.
+
 ```text
 TURNSTILE_HOSTNAMES=localhost,127.0.0.1,your-production-domain.com
 ```
