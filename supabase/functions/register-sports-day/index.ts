@@ -14,7 +14,13 @@ Deno.serve(async (request: Request) => {
   const supabaseUrl = Deno.env.get('SUPABASE_URL');
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
   if (!turnstileSecret || !supabaseUrl || !serviceRoleKey) {
-    return new Response(JSON.stringify({ success: false, message: 'Server registration configuration is missing.' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const missing = [
+      !turnstileSecret ? 'TURNSTILE_SECRET_KEY' : '',
+      !supabaseUrl ? 'SUPABASE_URL' : '',
+      !serviceRoleKey ? 'SUPABASE_SERVICE_ROLE_KEY' : '',
+    ].filter(Boolean);
+    console.error('[registration] Missing Edge Function configuration:', missing);
+    return new Response(JSON.stringify({ success: false, message: `Server registration configuration is missing: ${missing.join(', ')}.` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
   let body: { turnstileToken?: string; email?: string; name?: string; businessUnit?: string; eventName?: string; eventNames?: string[] };

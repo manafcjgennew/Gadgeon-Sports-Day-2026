@@ -28,7 +28,10 @@ export type RegistrationResult = {
 };
 
 export async function submitRegistration(payload: RegistrationPayload, turnstileToken: string): Promise<RegistrationResult> {
-  if (!isSupabaseConfigured || !supabase) return { status: 'configuration', message: 'Registration is unavailable because Supabase is not configured.' };
+  if (!isSupabaseConfigured || !supabase) {
+    console.error('[registration] Submission blocked because the browser-side Supabase client is not initialized.');
+    return { status: 'configuration', message: 'Registration is unavailable because Supabase is not configured. Please contact the website administrator.' };
+  }
   if (!turnstileToken) return { status: 'captcha', message: 'Please complete CAPTCHA verification.' };
 
   try {
@@ -67,7 +70,10 @@ export async function submitRegistration(payload: RegistrationPayload, turnstile
     if (data?.duplicates?.length && data?.registered?.length) return { status: 'partial', message: data.message, registered: data.registered, duplicates: data.duplicates, failed: data.failed || [] };
     if (data?.duplicates?.length) return { status: 'duplicate', message: data.message, duplicates: data.duplicates };
     return { status: 'success', registered: data.registered || [] };
-  } catch {
+  } catch (error) {
+    console.error('[registration] Edge Function invocation threw an unexpected error.', {
+      errorName: error instanceof Error ? error.name : 'UnknownError',
+    });
     return { status: 'network', message: 'Network connection failed. Check your internet connection and try again.' };
   }
 }

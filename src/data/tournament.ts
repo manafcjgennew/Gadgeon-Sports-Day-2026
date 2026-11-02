@@ -5,7 +5,7 @@ export const events: EventItem[] = [
  {id:'board',shortDate:'NOV 09 ONWARDS',date:'Starting November 9, 2026',title:'Board Games',category:'Indoor Games',description:'Strategy, patience, and intelligence. Every move counts.',games:['Carroms','Chess'],image:'/images/board-games.jpg'},
  {id:'rackets',shortDate:'NOV 20',date:'November 20, 2026',title:'Table Tennis & Badminton',category:'Indoor Sports',description:'Fast reactions, precision, and incredible sporting action.',games:['Table Tennis','Badminton'],image:'/images/badminton.jpg'},
  {id:'cricket',shortDate:'DEC 01–03',date:'December 1, 2 and 3, 2026',title:'Cricket',category:'Outdoor Sports',description:'Gear up for the ultimate cricket showdown. Bat, bowl, field, and lead your team to victory.',image:'/images/cricket.jpg'},
- {id:'finale',shortDate:'DEC 05',date:'December 5, 2026',title:'The Grand Sports Finale',category:'Grand Finale',description:"One final stage. One ultimate celebration. It's time to showcase your talent, celebrate your achievements, and crown the champions of Gadgeon Sports Day 2026.",games:['Athletics','Board Games Finals','Online Games Finals','PS5 Championship'],finale:true,image:'/images/finale.jpg'}
+ {id:'finale',shortDate:'DEC 06',date:'December 6, 2026',title:'The Grand Sports Finale',category:'Grand Finale',description:"One final stage. One ultimate celebration. It's time to showcase your talent, celebrate your achievements, and crown the champions of Gadgeon Sports Day 2026.",games:['Athletics','Board Games Finals','Online Games Finals','PS5 Championship'],finale:true,image:'/images/finale.jpg'}
 ];
 export const onlineGames=['PES','LUDO','CARROMS','PUBG'];
 export const ps5Games=['FIFA','Cricket','WWE','Racing'];
@@ -29,6 +29,6 @@ export const sportsShowcase = [
  {id:'table-tennis',title:'Table Tennis',date:'Nov 20, 2026',category:'Indoor Sports',description:'Fast reactions and precision.',image:'/images/table-tennis.jpg'},
  {id:'badminton',title:'Badminton',date:'Nov 20, 2026',category:'Indoor Sports',description:'Speed, focus, and finesse.',image:'/images/badminton.jpg'},
  {id:'cricket',title:'Cricket',date:'Dec 01–03, 2026',category:'Outdoor Sports',description:'The ultimate cricket showdown.',image:'/images/cricket.jpg'},
- {id:'athletics',title:'Athletics',date:'Dec 05, 2026',category:'Grand Finale',description:'Sprint, throw, and leap for glory.',image:'/images/athletics.jpg'},
- {id:'ps5',title:'PS5 Gaming',date:'Dec 05, 2026',category:'Grand Finale',description:'FIFA, Cricket, WWE, and Racing.',image:'/images/ps5.jpg'},
+ {id:'athletics',title:'Athletics',date:'Dec 06, 2026',category:'Grand Finale',description:'Sprint, throw, and leap for glory.',image:'/images/athletics.jpg'},
+ {id:'ps5',title:'PS5 Gaming',date:'Dec 06, 2026',category:'Grand Finale',description:'FIFA, Cricket, WWE, and Racing.',image:'/images/ps5.jpg'},
 ];

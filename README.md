@@ -70,7 +70,7 @@ The form inserts only these columns into `sports_day_registrations`:
 email, name, business_unit, event_name
 ```
 
-The database must generate `id` and `created_at`. Keep Row Level Security enabled and provide a public INSERT policy for registration submissions only. Do not create public SELECT, UPDATE, or DELETE policies or use the `service_role` key in the frontend.
+The database must generate `id` and `created_at`. Keep Row Level Security enabled and do not create browser INSERT policies. The Edge Function uses the server-side service role to insert registrations after CAPTCHA and validation checks. Do not expose or use the service-role key in the frontend.
 
 For duplicate detection, the database should have a unique constraint on `(email, event_name)`, for example:
 
