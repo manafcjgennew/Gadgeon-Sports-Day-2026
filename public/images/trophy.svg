@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 220" role="img" aria-label="Championship trophy">
+  <defs>
+    <linearGradient id="cup" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset=".28" stop-color="#1687ff"/>
+      <stop offset=".68" stop-color="#875cff"/>
+      <stop offset="1" stop-color="#ff7424"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <g filter="url(#glow)">
+    <path d="M70 42h80v38c0 35-17 58-40 58S70 115 70 80V42Z" fill="url(#cup)" stroke="#dbe9ff" stroke-width="3"/>
+    <path d="M70 58H45c0 38 16 58 42 62M150 58h25c0 38-16 58-42 62" fill="none" stroke="#1687ff" stroke-width="10" stroke-linecap="round"/>
+    <rect x="103" y="136" width="14" height="38" rx="6" fill="#a9c9ff"/>
+    <path d="M72 174h76l9 18H63l9-18Z" fill="url(#cup)" stroke="#dbe9ff" stroke-width="3"/>
+    <path d="M110 64l8 16 18 2-13 12 4 18-17-9-17 9 4-18-13-12 18-2 8-16Z" fill="#fff" opacity=".9"/>
+  </g>
+</svg>

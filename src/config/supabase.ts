@@ -1,5 +1,31 @@
 import { createClient } from '@supabase/supabase-js';
 
+type Database = {
+  public: {
+    Tables: {
+      sports_day_teams: {
+        Row: { id: string; name: string; points: number; updated_at: string };
+        Insert: { id?: string; name: string; points?: number; updated_at?: string };
+        Update: { id?: string; name?: string; points?: number; updated_at?: string };
+        Relationships: [];
+      };
+      admin_users: {
+        Row: { user_id: string; created_at: string };
+        Insert: { user_id: string; created_at?: string };
+        Update: { user_id?: string; created_at?: string };
+        Relationships: [];
+      };
+    };
+    Views: { [_ in never]: never };
+    Functions: {
+      is_sports_day_admin: { Args: Record<string, never>; Returns: boolean };
+      list_sports_day_registrations: { Args: Record<string, never>; Returns: unknown };
+    };
+    Enums: { [_ in never]: never };
+    CompositeTypes: { [_ in never]: never };
+  };
+};
+
 const supabaseUrl = (
   import.meta.env.VITE_SUPABASE_URL?.trim()
   || ''
@@ -30,10 +56,10 @@ export const supabaseConfigurationIssue = (() => {
 
 export const isSupabaseConfigured = supabaseConfigurationIssue === null;
 
-let client = null as ReturnType<typeof createClient> | null;
+let client = null as ReturnType<typeof createClient<Database>> | null;
 if (isSupabaseConfigured) {
   try {
-    client = createClient(supabaseUrl, supabaseAnonKey);
+    client = createClient<Database>(supabaseUrl, supabaseAnonKey);
   } catch (error) {
     console.error('[registration] Supabase client initialization failed.', {
       errorName: error instanceof Error ? error.name : 'UnknownError',

@@ -4,10 +4,10 @@ export const registrationConfig = {
   businessUnits: ['Business Unit placeholder 1', 'Business Unit placeholder 2', 'Business Unit placeholder 3'],
   events: [
     { group: 'Sports', options: ['Football', 'Badminton', 'Cricket', 'Table Tennis'] },
-    { group: 'Athletics', options: ['100m Run', '200m Run', '400m Run', 'Shot Put Throw', 'Rope Skipping'] },
+    { group: 'Athletics', options: ['100m Run', '200m Run', '400m Run', 'Skipping Rope'] },
     { group: 'Board Games', options: ['Carroms', 'Chess'] },
-    { group: 'Online Games', options: ['PES', 'Ludo', 'Carroms', 'PUBG'] },
-    { group: 'PS5 Games', options: ['FIFA', 'Cricket', 'WWE', 'Racing'] },
+    { group: 'Online Games', options: ['PES', 'Ludo', 'Carroms', 'BGMI'] },
+    { group: 'PS5 Games', options: ['Football: EA Sports FC 27', 'Cricket: Cricket 26', 'Wrestling & Combat: WWE 2K26 & UFC 5', 'Racing: WRC Generations & Dirt 5'] },
   ],
 };
 export const defaultEventNames = [
@@ -18,7 +18,7 @@ export const defaultEventNames = [
   'Board Games — Carroms',
 ];
 
-export type RegistrationPayload = { email: string; name: string; businessUnit: string; eventNames: string[] };
+export type RegistrationPayload = { email: string; name: string; mobileNumber: string; teamName: string; businessUnit: string; eventNames: string[] };
 export type RegistrationResult = {
   status: 'success' | 'captcha' | 'duplicate' | 'partial' | 'configuration' | 'permission' | 'network' | 'database';
   message?: string;
@@ -41,6 +41,8 @@ export async function submitRegistration(payload: RegistrationPayload, turnstile
         turnstileToken,
         email: payload.email.trim(),
         name: payload.name.trim().replace(/\s+/g, ' ').slice(0, 120),
+        mobileNumber: payload.mobileNumber.trim().slice(0, 30),
+        teamName: payload.teamName.trim().replace(/\s+/g, ' ').slice(0, 120),
         businessUnit: payload.businessUnit.trim().slice(0, 120),
         eventNames: payload.eventNames.map((name) => name.trim().slice(0, 120)).filter(Boolean),
         eventName: payload.eventNames[0]?.trim().slice(0, 120) || '',

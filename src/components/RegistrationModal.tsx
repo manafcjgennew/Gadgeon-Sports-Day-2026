@@ -4,11 +4,12 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { CheckCircle2, LoaderCircle, TriangleAlert, X } from 'lucide-react';
 import { defaultEventNames, registrationConfig, submitRegistration } from '../config/registration';
 import { loadTurnstile, turnstileSiteKey } from '../config/captcha';
+import { isSupabaseConfigured, supabase } from '../config/supabase';
 
 type RegistrationModalProps = { open: boolean; onClose: () => void };
-type RegistrationForm = { email: string; name: string; businessUnit: string };
+type RegistrationForm = { email: string; name: string; mobileNumber: string; teamName: string; businessUnit: string };
 type FormErrors = Partial<Record<keyof RegistrationForm | 'eventNames', string>>;
-const initialForm: RegistrationForm = { email: '', name: '', businessUnit: '' };
+const initialForm: RegistrationForm = { email: '', name: '', mobileNumber: '', teamName: '', businessUnit: '' };
 
 export function RegistrationModal({ open, onClose }: RegistrationModalProps) {
   const [form, setForm] = useState(initialForm);
@@ -22,10 +23,38 @@ export function RegistrationModal({ open, onClose }: RegistrationModalProps) {
   const [failedEvents, setFailedEvents] = useState<string[]>([]);
   const [captchaToken, setCaptchaToken] = useState('');
   const [captchaMessage, setCaptchaMessage] = useState('');
+  const [teams, setTeams] = useState<string[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState(false);
+  const [teamsError, setTeamsError] = useState('');
   const widgetId = useRef<string | undefined>(undefined);
   const submissionInFlight = useRef(false);
   const widgetContainer = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    if (!open || !isSupabaseConfigured || !supabase) {
+      if (open) setTeamsError('Team list is unavailable. Please try again later.');
+      return;
+    }
+    let cancelled = false;
+    setTeamsLoading(true);
+    setTeamsError('');
+    void supabase
+      .from('sports_day_teams')
+      .select('name')
+      .order('name')
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) {
+          setTeams([]);
+          setTeamsError('Team list could not be loaded. Please try again.');
+        } else {
+          setTeams((data || []).map((team) => team.name));
+        }
+        setTeamsLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [open]);
 
   useEffect(() => {
     if (!open || stage !== 'form' || !turnstileSiteKey || !widgetContainer.current) return;
@@ -58,6 +87,10 @@ export function RegistrationModal({ open, onClose }: RegistrationModalProps) {
     if (!form.email.trim()) nextErrors.email = 'Email is required.';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) nextErrors.email = 'Enter a valid email address.';
     if (!form.name.trim()) nextErrors.name = 'Full name is required.';
+    if (!form.mobileNumber.trim()) nextErrors.mobileNumber = 'Mobile number is required.';
+    else if (!/^\+?[0-9][0-9\s-]{6,14}[0-9]$/.test(form.mobileNumber.trim())) nextErrors.mobileNumber = 'Enter a valid mobile number.';
+    if (!form.teamName.trim()) nextErrors.teamName = 'Team name is required.';
+    else if (!teams.includes(form.teamName)) nextErrors.teamName = 'Select a valid team name.';
     if (!form.businessUnit) nextErrors.businessUnit = 'Select a business unit.';
     if (!selectedEvents.length) nextErrors.eventNames = 'Select at least one event.';
     setErrors(nextErrors);
@@ -87,6 +120,8 @@ export function RegistrationModal({ open, onClose }: RegistrationModalProps) {
     const result = await submitRegistration({
       email: form.email.trim(),
       name: form.name.trim().replace(/\s+/g, ' '),
+      mobileNumber: form.mobileNumber.trim(),
+      teamName: form.teamName.trim().replace(/\s+/g, ' '),
       businessUnit: form.businessUnit,
       eventNames: selectedEvents,
     }, captchaToken);
@@ -125,7 +160,7 @@ export function RegistrationModal({ open, onClose }: RegistrationModalProps) {
     }
   };
 
-  const formIsValid = Boolean(form.email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) && form.name.trim() && form.businessUnit && selectedEvents.length);
+  const formIsValid = Boolean(form.email.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim()) && form.name.trim() && /^\+?[0-9][0-9\s-]{6,14}[0-9]$/.test(form.mobileNumber.trim()) && teams.includes(form.teamName) && form.businessUnit && selectedEvents.length);
   const toggleEvent = (eventName: string) => {
     setSelectedEvents((current) => current.includes(eventName) ? current.filter((name) => name !== eventName) : [...current, eventName]);
     setErrors((current) => ({ ...current, eventNames: undefined }));
@@ -170,6 +205,8 @@ export function RegistrationModal({ open, onClose }: RegistrationModalProps) {
               <div className="registration-review-details">
                 <div><span>Name</span><strong>{form.name}</strong></div>
                 <div><span>Email</span><strong>{form.email.trim()}</strong></div>
+                <div><span>Mobile No</span><strong>{form.mobileNumber.trim()}</strong></div>
+                <div><span>Team Name</span><strong>{form.teamName}</strong></div>
                 <div><span>Business Unit</span><strong>{form.businessUnit}</strong></div>
               </div>
               <div className="registration-events-heading"><span>YOUR SELECTED EVENTS</span><strong>{selectedEvents.length} selected</strong></div>
@@ -203,6 +240,27 @@ export function RegistrationModal({ open, onClose }: RegistrationModalProps) {
             <form onSubmit={handleReview} noValidate>
               <div className="registration-field"><label htmlFor="registration-email">Email</label><input id="registration-email" type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} placeholder="you@gadgeon.com" aria-invalid={Boolean(errors.email)} aria-describedby={errors.email ? 'email-error' : undefined} /><span id="email-error" className="field-error">{errors.email}</span></div>
               <div className="registration-field"><label htmlFor="registration-name">Name</label><input id="registration-name" type="text" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Full name" aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? 'name-error' : undefined} /><span id="name-error" className="field-error">{errors.name}</span></div>
+              <div className="registration-field"><label htmlFor="registration-mobile">Mobile No</label><input id="registration-mobile" type="tel" value={form.mobileNumber} onChange={(event) => setForm({ ...form, mobileNumber: event.target.value })} placeholder="+91 9876543210" aria-invalid={Boolean(errors.mobileNumber)} aria-describedby={errors.mobileNumber ? 'mobile-error' : undefined} /><span id="mobile-error" className="field-error">{errors.mobileNumber}</span></div>
+              <div className="registration-field">
+                <label htmlFor="registration-team">Team Name</label>
+                <select
+                  id="registration-team"
+                  value={form.teamName}
+                  onChange={(event) => {
+                    setForm({ ...form, teamName: event.target.value });
+                    setErrors((current) => ({ ...current, teamName: undefined }));
+                  }}
+                  disabled={teamsLoading || teams.length === 0}
+                  aria-invalid={Boolean(errors.teamName || teamsError)}
+                  aria-describedby={errors.teamName || teamsError ? 'team-error' : undefined}
+                >
+                  <option value="">
+                    {teamsLoading ? 'Loading teams...' : teamsError ? 'Teams unavailable' : 'Select a team'}
+                  </option>
+                  {teams.map((team) => <option key={team} value={team}>{team}</option>)}
+                </select>
+                <span id="team-error" className="field-error">{errors.teamName || teamsError}</span>
+              </div>
               <div className="registration-field"><label htmlFor="registration-business">Business Unit</label><select id="registration-business" value={form.businessUnit} onChange={(event) => setForm({ ...form, businessUnit: event.target.value })} aria-invalid={Boolean(errors.businessUnit)} aria-describedby={errors.businessUnit ? 'business-error' : undefined}><option value="">Select a business unit</option>{registrationConfig.businessUnits.map((unit) => <option key={unit} value={unit}>{unit}</option>)}</select><span id="business-error" className="field-error">{errors.businessUnit}</span></div>
               <div className="registration-events">
                 <div className="registration-events-heading">

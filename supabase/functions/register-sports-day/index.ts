@@ -23,7 +23,7 @@ Deno.serve(async (request: Request) => {
     return new Response(JSON.stringify({ success: false, message: `Server registration configuration is missing: ${missing.join(', ')}.` }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
-  let body: { turnstileToken?: string; email?: string; name?: string; businessUnit?: string; eventName?: string; eventNames?: string[] };
+  let body: { turnstileToken?: string; email?: string; name?: string; mobileNumber?: string; teamName?: string; businessUnit?: string; eventName?: string; eventNames?: string[] };
   try { body = await request.json(); } catch {
     return new Response(JSON.stringify({ success: false, message: 'Invalid registration request.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
@@ -34,12 +34,17 @@ Deno.serve(async (request: Request) => {
   const form = {
     email: typeof body.email === 'string' ? body.email.trim().toLowerCase().slice(0, 254) : '',
     name: typeof body.name === 'string' ? body.name.trim().replace(/\s+/g, ' ').slice(0, 120) : '',
+    mobile_number: typeof body.mobileNumber === 'string' ? body.mobileNumber.trim().slice(0, 30) : '',
+    team_name: typeof body.teamName === 'string' ? body.teamName.trim().replace(/\s+/g, ' ').slice(0, 120) : '',
     business_unit: typeof body.businessUnit === 'string' ? body.businessUnit.trim().slice(0, 120) : '',
   };
   const suppliedNames = Array.isArray(body.eventNames) ? body.eventNames : (typeof body.eventName === 'string' ? [body.eventName] : []);
   const eventNames = [...new Set(suppliedNames.map((name) => name.trim().slice(0, 120)).filter(Boolean))];
-  if (!form.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) || !form.name || !form.business_unit || !eventNames.length) {
+  if (!form.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) || !form.name || !form.mobile_number || !form.team_name || !form.business_unit || !eventNames.length) {
     return new Response(JSON.stringify({ success: false, message: 'Please provide valid values for all required fields.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
+  if (!/^\+?[0-9][0-9\s-]{6,14}[0-9]$/.test(form.mobile_number)) {
+    return new Response(JSON.stringify({ success: false, message: 'Please provide a valid mobile number.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
   let verifyResult: { success: boolean; action?: string; hostname?: string; 'error-codes'?: string[] };
@@ -94,12 +99,39 @@ Deno.serve(async (request: Request) => {
     .split(',')
     .map((hostname) => hostname.trim().toLowerCase())
     .filter(Boolean);
-  if (allowedHostnames.length && (!verify.hostname || !allowedHostnames.includes(verify.hostname.toLowerCase()))) {
-    console.error('[registration] Turnstile hostname mismatch.', { hostnameAllowed: false });
+  const originHostname = (() => {
+    const origin = request.headers.get('origin') ?? request.headers.get('referer') ?? '';
+    try {
+      return new URL(origin).hostname.toLowerCase();
+    } catch {
+      return '';
+    }
+  })();
+  const returnedHostname = verify.hostname?.trim().toLowerCase() ?? '';
+  const hostnameMatchesAllowlist = Boolean(returnedHostname && allowedHostnames.includes(returnedHostname));
+  const hostnameMatchesOrigin = Boolean(returnedHostname && originHostname && returnedHostname === originHostname);
+  if (!returnedHostname || (allowedHostnames.length && !hostnameMatchesAllowlist && !hostnameMatchesOrigin)) {
+    console.error('[registration] Turnstile hostname mismatch.', {
+      returnedHostname,
+      originHostname: originHostname || null,
+      allowedHostnameCount: allowedHostnames.length,
+    });
     return new Response(JSON.stringify({ success: false, errorCode: 'turnstile_hostname_mismatch', message: 'CAPTCHA verification is not valid for this website. Please try again.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });
+  const { data: teamRow, error: teamLookupError } = await supabase
+    .from('sports_day_teams')
+    .select('name')
+    .eq('name', form.team_name)
+    .maybeSingle();
+  if (teamLookupError) {
+    console.error('[registration] Team lookup failed.', { message: teamLookupError.message });
+    return new Response(JSON.stringify({ success: false, message: 'Team information is temporarily unavailable. Please try again.' }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
+  if (!teamRow) {
+    return new Response(JSON.stringify({ success: false, message: 'Please select a valid team name.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
   const { data: existingRows, error: lookupError } = await supabase
     .from('sports_day_registrations')
     .select('event_name')

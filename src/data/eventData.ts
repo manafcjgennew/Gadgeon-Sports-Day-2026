@@ -19,24 +19,22 @@ export const sports = [
 ];
 
 export const teams = [
-  { name: 'Blue Thunder', color: '#1687ff', initials: 'BT', captain: 'Captain placeholder', members: 24 },
-  { name: 'Orange Force', color: '#ff8a00', initials: 'OF', captain: 'Captain placeholder', members: 22 },
-  { name: 'White Lightning', color: '#e8efff', initials: 'WL', captain: 'Captain placeholder', members: 20 },
-  { name: 'Green Titans', color: '#20c997', initials: 'GT', captain: 'Captain placeholder', members: 21 },
+  { name: 'Avial Avengers', color: '#1687ff', initials: 'AA', points: 0 },
+  { name: 'Thumbapoo Squad', color: '#ff8a00', initials: 'TS', points: 0 },
+  { name: 'Sharkara Upperi Syndicate', color: '#e8efff', initials: 'SU', points: 0 },
+  { name: 'Prakmbanam', color: '#20c997', initials: 'P', points: 0 },
 ];
 
-export const leaderboard = teams.map((team, index) => ({
-  ...team,
-  gold: [4, 3, 2, 1][index], silver: [2, 3, 2, 4][index], bronze: [1, 2, 4, 2][index],
-  points: [28, 24, 18, 16][index], demo: true,
-}));
+export const leaderboard = teams.map((team) => ({ ...team }));
 
 export const schedule = [
-  { time: '09:00 AM', title: 'Opening Ceremony & Team Parade', venue: 'Main Arena — placeholder', status: 'Placeholder' },
-  { time: '10:30 AM', title: 'Football & Volleyball', venue: 'Sports Ground — placeholder', status: 'Sample' },
-  { time: '12:30 PM', title: 'Lunch & Team Activities', venue: 'Central Pavilion — placeholder', status: 'Sample' },
-  { time: '02:00 PM', title: 'Cricket & Badminton Finals', venue: 'Main Arena — placeholder', status: 'Sample' },
-  { time: '04:30 PM', title: 'Awards & Closing Celebration', venue: 'Main Stage — placeholder', status: 'Sample' },
+  { time: 'November 9–13, 2026', title: 'Football', venue: 'USC Kakkanad', status: 'Scheduled' },
+  { time: 'November 10–12, 2026', title: 'Table Tennis', venue: 'USC Kakkanad', status: 'Scheduled' },
+  { time: 'November 9, 2026 onwards', title: 'Online Games', venue: 'Venue not specified', status: 'Onwards' },
+  { time: 'November 14, 2026 onwards', title: 'Board Games', venue: 'Gadgeon SmartCity', status: 'Onwards' },
+  { time: 'November 28, 2026', title: 'Badminton', venue: 'USC Kakkanad', status: 'Scheduled' },
+  { time: 'December 1–3, 2026', title: 'Cricket', venue: 'Backyard Kakkanad', status: 'Scheduled' },
+  { time: 'December 6, 2026', title: 'Sports Day Grand Finale', venue: 'The Indian Public School, Kakkanad', status: 'Grand Finale' },
 ];
 
 export const gallery = [

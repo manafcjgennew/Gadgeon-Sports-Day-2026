@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { ArrowDown, ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight, Clock3, MapPin, Menu, Medal, Trophy, X } from 'lucide-react';
+import { ArrowDown, ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight, Clock3, MapPin, Menu, Medal, X } from 'lucide-react';
 import { eventConfig } from './config/event';
 import { gallery, highlights, leaderboard, schedule, sports, stats, teams } from './data/eventData';
 import './styles.css';
@@ -84,8 +84,8 @@ function App() {
       </div></section>
 
       <section id="teams" className="section teams-section"><div className="container"><motion.div {...reveal} className="section-heading"><div><span className="kicker">UNITED BY COLORS</span><h2>MEET THE <em>TEAMS</em></h2></div><p>Team names and identities shown as placeholders.<br/>Ready to replace with confirmed details.</p></motion.div>
-        <div className="teams-layout"><div className="team-grid">{teams.map((team,i)=><motion.article {...reveal} transition={{duration:.55,delay:i*.06}} className="team-card" key={team.name}><div className="team-logo" style={{'--team':team.color} as React.CSSProperties}>{team.initials}</div><div><span>TEAM {String(i+1).padStart(2,'0')}</span><h3>{team.name}</h3><p>{team.members} members • {team.captain}</p></div></motion.article>)}</div>
-        <motion.div {...reveal} className="leaderboard"><div className="board-head"><div><span>DEMO DATA</span><h3>Leaderboard</h3></div><Trophy/></div>{leaderboard.map((team,i)=><div className="board-row" key={team.name}><b>{i+1}</b><div className="mini-logo" style={{background:team.color}}>{team.initials}</div><strong>{team.name}</strong><span className="medals"><i title="Gold">{team.gold}</i><i title="Silver">{team.silver}</i><i title="Bronze">{team.bronze}</i></span><em>{team.points} pts</em></div>)}</motion.div></div>
+        <div className="teams-layout"><div className="team-grid">{teams.map((team,i)=><motion.article {...reveal} transition={{duration:.55,delay:i*.06}} className="team-card" key={team.name}><div className="team-logo" style={{'--team':team.color} as React.CSSProperties}>{team.initials}</div><div><span>TEAM {String(i+1).padStart(2,'0')}</span><h3>{team.name}</h3></div></motion.article>)}</div>
+        <motion.div {...reveal} className="leaderboard"><div className="board-head"><div><h3>Leaderboard</h3></div></div>{leaderboard.map((team)=><div className="board-row" key={team.name}><div className="mini-logo" style={{background:team.color}}>{team.initials}</div><strong>{team.name}</strong><em>{team.points} Points</em></div>)}</motion.div></div>
       </div></section>
 
       <section id="schedule" className="section schedule-section"><div className="container"><motion.div {...reveal} className="section-heading"><div><span className="kicker">THE MATCH PLAN</span><h2>EVENT <em>SCHEDULE</em></h2></div><p>Editable placeholder schedule.<br/>Replace with confirmed event timings.</p></motion.div><div className="timeline">{schedule.map((item,i)=><motion.article {...reveal} transition={{duration:.55,delay:i*.07}} className="timeline-row" key={item.title}><div className="timeline-time"><Clock3 size={16}/><strong>{item.time}</strong></div><div className="timeline-dot"/><div className="timeline-card"><span>{item.status}</span><h3>{item.title}</h3><p><MapPin size={15}/>{item.venue}</p></div></motion.article>)}</div></div></section>

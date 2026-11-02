@@ -14,7 +14,7 @@
 .registration-result.partial{border-color:rgba(255,184,74,.32);background:linear-gradient(135deg,rgba(255,184,74,.09),rgba(255,255,255,.025))}
 .registration-result.partial>svg{color:#ffb84a}
 .registration-confirmation{display:flex;flex-direction:column;gap:14px}
-.registration-review-details{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.025)}
+.registration-review-details{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:12px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.025)}
 .registration-review-details div{display:flex;flex-direction:column;gap:5px;padding:4px 8px;border-right:1px solid rgba(255,255,255,.07)}
 .registration-review-details div:last-child{border-right:0}
 .registration-review-details span{font-size:8px;text-transform:uppercase;letter-spacing:.9px;color:#8f9dab}

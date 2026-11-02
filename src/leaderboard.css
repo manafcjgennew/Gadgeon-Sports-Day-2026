@@ -1,0 +1,137 @@
+.leaderboard-layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  align-items: center;
+  gap: 28px;
+}
+
+.leaderboard-layout .trophy-stage {
+  position: relative;
+  min-height: 290px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 24px;
+  border: 1px solid rgba(22,135,255,.16);
+  background:
+    radial-gradient(circle at 50% 42%, rgba(22,135,255,.16), transparent 46%),
+    linear-gradient(145deg, rgba(255,255,255,.035), rgba(255,255,255,.012));
+}
+
+.leaderboard-layout .trophy-stage img {
+  position: relative;
+  z-index: 1;
+  width: 220px;
+  height: 220px;
+  object-fit: contain;
+  filter: drop-shadow(0 18px 26px rgba(22,135,255,.22));
+  animation: trophyFloat 4s ease-in-out infinite;
+}
+
+.leaderboard-layout .trophy-stage > span {
+  position: relative;
+  z-index: 1;
+  margin-top: -18px;
+  color: #aab5c5;
+  font-size: 11px;
+  letter-spacing: .22em;
+}
+
+.leaderboard-layout .trophy-glow {
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: rgba(22,135,255,.12);
+  filter: blur(28px);
+}
+
+.leaderboard-layout .board {
+  width: 100%;
+}
+
+.leaderboard-layout .board-head,
+.leaderboard-layout .board-row {
+  grid-template-columns: 72px minmax(0, 1fr) 100px;
+}
+
+.leaderboard-layout .board-row {
+  align-items: center;
+  transition: transform .25s ease, border-color .25s ease, background .25s ease;
+}
+
+.leaderboard-layout .board-row:hover {
+  transform: translateX(5px);
+  border-color: rgba(22,135,255,.22);
+  background: linear-gradient(90deg, rgba(22,135,255,.06), rgba(255,255,255,.02));
+}
+
+.leaderboard-layout .board-row b {
+  color: #b7c1cf;
+  font-size: 20px;
+}
+
+.leaderboard-layout .board-row strong:nth-child(2) {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.leaderboard-layout .board-row strong:nth-child(2) i {
+  width: 4px;
+  height: 34px;
+  border-radius: 99px;
+  box-shadow: 0 0 18px currentColor;
+}
+
+.leaderboard-layout .board-row strong:last-child {
+  justify-self: end;
+  white-space: nowrap;
+}
+
+.leaderboard-layout .board-row.first-place {
+  border-color: rgba(22,135,255,.18);
+  background: linear-gradient(90deg, rgba(22,135,255,.07), rgba(135,92,255,.025));
+}
+
+.timeline-card .timeline-venue {
+  margin-top: 8px;
+  color: var(--muted);
+}
+
+@keyframes trophyFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@media (max-width: 640px) {
+  .leaderboard-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .leaderboard-layout .trophy-stage {
+    min-height: 220px;
+  }
+
+  .leaderboard-layout .trophy-stage img {
+    width: 170px;
+    height: 170px;
+  }
+
+  .leaderboard-layout {
+    padding: 14px;
+  }
+
+  .leaderboard-layout .board-head,
+  .leaderboard-layout .board-row {
+    grid-template-columns: 48px minmax(0, 1fr) 82px;
+    gap: 8px;
+  }
+
+  .leaderboard-layout .board-row strong:first-child {
+    font-size: 14px;
+  }
+}
