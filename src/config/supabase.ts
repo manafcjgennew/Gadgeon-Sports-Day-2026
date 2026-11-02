@@ -15,6 +15,27 @@ type Database = {
         Update: { user_id?: string; created_at?: string };
         Relationships: [];
       };
+      sports_day_game_results: {
+        Row: {
+          game_name: string; winner_name: string | null; winner_email: string | null;
+          winner_team_name: string | null; winner_business_unit: string | null;
+          runner_up_name: string | null; runner_up_email: string | null;
+          runner_up_team_name: string | null; runner_up_business_unit: string | null; updated_at: string;
+        };
+        Insert: {
+          game_name: string; winner_name?: string | null; winner_email?: string | null;
+          winner_team_name?: string | null; winner_business_unit?: string | null;
+          runner_up_name?: string | null; runner_up_email?: string | null;
+          runner_up_team_name?: string | null; runner_up_business_unit?: string | null; updated_at?: string;
+        };
+        Update: {
+          game_name?: string; winner_name?: string | null; winner_email?: string | null;
+          winner_team_name?: string | null; winner_business_unit?: string | null;
+          runner_up_name?: string | null; runner_up_email?: string | null;
+          runner_up_team_name?: string | null; runner_up_business_unit?: string | null; updated_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: { [_ in never]: never };
     Functions: {

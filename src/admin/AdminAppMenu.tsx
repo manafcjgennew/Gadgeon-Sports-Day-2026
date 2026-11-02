@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, ClipboardList, LayoutDashboard, LogOut, ShieldAlert, Trophy, X } from 'lucide-react';
+import { Check, ClipboardList, Gamepad2, LayoutDashboard, LogOut, Medal, ShieldAlert, Trophy, X } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from '../config/supabase';
+import { registrationConfig } from '../config/registration';
 import '../admin.css';
 
 type Team = { id: string; name: string; points: number };
@@ -17,6 +18,17 @@ type Registration = {
   [key: string]: unknown;
 };
 type AuthStatus = 'loading' | 'unauthenticated' | 'authorized' | 'unauthorized' | 'authorization_error';
+type GameResult = {
+  game_name: string;
+  winner_name: string | null;
+  winner_email: string | null;
+  winner_team_name: string | null;
+  winner_business_unit: string | null;
+  runner_up_name: string | null;
+  runner_up_email: string | null;
+  runner_up_team_name: string | null;
+  runner_up_business_unit: string | null;
+};
 
 function GoogleLogo() {
   return (
@@ -44,13 +56,20 @@ export default function AdminApp() {
   const [loadingRegistrations, setLoadingRegistrations] = useState(false);
   const [registrationFilter, setRegistrationFilter] = useState('All Games');
   const [registrationSearch, setRegistrationSearch] = useState('');
-  const [registrationSummary, setRegistrationSummary] = useState<{ type: 'business' | 'team'; value: string } | null>(null);
+  const [registrationSummary, setRegistrationSummary] = useState<{ type: 'business' | 'team' | 'game'; value: string } | null>(null);
   const [editing, setEditing] = useState<Team | null>(null);
   const [points, setPoints] = useState('');
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
   const [oauthLoading, setOauthLoading] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'registrations'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'registrations' | 'games'>('dashboard');
+  const [gameResults, setGameResults] = useState<GameResult[]>([]);
+  const [loadingGameResults, setLoadingGameResults] = useState(false);
+  const [editingGameResult, setEditingGameResult] = useState<GameResult | null>(null);
+  const [winnerResultSearch, setWinnerResultSearch] = useState('');
+  const [runnerUpResultSearch, setRunnerUpResultSearch] = useState('');
+  const [winnerDropdownOpen, setWinnerDropdownOpen] = useState(false);
+  const [runnerUpDropdownOpen, setRunnerUpDropdownOpen] = useState(false);
   const savingRef = useRef(false);
 
   const checkAdmin = async () => {
@@ -111,6 +130,21 @@ export default function AdminApp() {
     setRegistrations(Array.isArray(data) ? data as Registration[] : []);
   };
 
+  const loadGameResults = async () => {
+    if (!supabase) return;
+    setLoadingGameResults(true);
+    const { data, error } = await supabase
+      .from('sports_day_game_results')
+      .select('game_name,winner_name,winner_email,winner_team_name,winner_business_unit,runner_up_name,runner_up_email,runner_up_team_name,runner_up_business_unit')
+      .order('game_name');
+    setLoadingGameResults(false);
+    if (error) {
+      setMessage('Game results could not be loaded.');
+      return;
+    }
+    setGameResults((data || []) as GameResult[]);
+  };
+
   useEffect(() => {
     queueMicrotask(() => { void checkAdmin(); });
     const listener = supabase?.auth.onAuthStateChange((event) => {
@@ -125,6 +159,7 @@ export default function AdminApp() {
     if (status === 'authorized') queueMicrotask(() => {
       void loadTeams();
       void loadRegistrations();
+      void loadGameResults();
     });
   }, [status]);
 
@@ -197,17 +232,97 @@ export default function AdminApp() {
     return counts;
   }, new Map<string, number>())]
     .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  const gameSummary = [...registrations.reduce((counts, registration) => {
+    const value = String(registration.event_name || 'Unknown Game');
+    counts.set(value, (counts.get(value) || 0) + 1);
+    return counts;
+  }, new Map<string, number>())]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
   const registrationQuery = registrationSearch.trim().toLowerCase();
   const filteredRegistrations = registrations.filter((registration) => {
     const matchesGame = registrationFilter === 'All Games' || registration.event_name === registrationFilter;
     const matchesSummary = !registrationSummary ||
       (registrationSummary.type === 'business'
         ? String(registration.business_unit || 'Unknown Business Unit') === registrationSummary.value
-        : String(registration.team_name || 'Unknown Team') === registrationSummary.value);
+        : registrationSummary.type === 'team'
+          ? String(registration.team_name || 'Unknown Team') === registrationSummary.value
+          : String(registration.event_name || 'Unknown Game') === registrationSummary.value);
     const matchesSearch = !registrationQuery || [registration.name, registration.email, registration.mobile_number, registration.team_name, registration.business_unit, registration.event_name]
       .some((value) => String(value || '').toLowerCase().includes(registrationQuery));
     return matchesGame && matchesSummary && matchesSearch;
   });
+  const allGames = [...new Set([
+    ...registrationConfig.events.flatMap((group) => group.options.map((game) => `${group.group} — ${game}`)),
+    ...gameNames,
+  ])].sort((a, b) => a.localeCompare(b));
+
+  const openGameResultEditor = (gameName: string, result?: GameResult) => {
+    const nextResult = result || {
+      game_name: gameName, winner_name: null, winner_email: null, winner_team_name: null, winner_business_unit: null,
+      runner_up_name: null, runner_up_email: null, runner_up_team_name: null, runner_up_business_unit: null,
+    };
+    setEditingGameResult(nextResult);
+    setWinnerResultSearch(nextResult.winner_name || '');
+    setRunnerUpResultSearch(nextResult.runner_up_name || '');
+    setWinnerDropdownOpen(false);
+    setRunnerUpDropdownOpen(false);
+  };
+
+  const gameParticipants = editingGameResult
+    ? [...registrations.reduce((participants, registration) => {
+        if (registration.event_name !== editingGameResult.game_name) return participants;
+        const key = `${registration.email || ''}|${registration.name || ''}|${registration.team_name || ''}|${registration.business_unit || ''}`;
+        if (!participants.has(key)) participants.set(key, registration);
+        return participants;
+      }, new Map<string, Registration>()).values()]
+    : [];
+
+  const selectGameParticipant = (side: 'winner' | 'runner-up', registration: Registration) => {
+    if (!editingGameResult) return;
+    const name = String(registration.name || '').trim();
+    const email = String(registration.email || '').trim();
+    const teamName = String(registration.team_name || '').trim();
+    const businessUnit = String(registration.business_unit || '').trim();
+    if (side === 'winner') {
+      setWinnerResultSearch(name);
+      setWinnerDropdownOpen(false);
+      setEditingGameResult({ ...editingGameResult, winner_name: name || null, winner_email: email || null, winner_team_name: teamName || null, winner_business_unit: businessUnit || null });
+    } else {
+      setRunnerUpResultSearch(name);
+      setRunnerUpDropdownOpen(false);
+      setEditingGameResult({ ...editingGameResult, runner_up_name: name || null, runner_up_email: email || null, runner_up_team_name: teamName || null, runner_up_business_unit: businessUnit || null });
+    }
+  };
+
+  const saveGameResult = async () => {
+    if (!editingGameResult || !supabase || savingRef.current) return;
+    const winnerEmail = editingGameResult.winner_email?.trim().toLowerCase();
+    const runnerUpEmail = editingGameResult.runner_up_email?.trim().toLowerCase();
+    if (winnerEmail && runnerUpEmail && winnerEmail === runnerUpEmail) {
+      setMessage('Winner and Runners Up must be different participants.');
+      return;
+    }
+    savingRef.current = true;
+    setSaving(true);
+    setMessage('');
+    const clean = (value: string | null) => value?.trim() || null;
+    const payload = {
+      game_name: editingGameResult.game_name,
+      winner_name: clean(editingGameResult.winner_name), winner_email: clean(editingGameResult.winner_email),
+      winner_team_name: clean(editingGameResult.winner_team_name), winner_business_unit: clean(editingGameResult.winner_business_unit),
+      runner_up_name: clean(editingGameResult.runner_up_name), runner_up_email: clean(editingGameResult.runner_up_email),
+      runner_up_team_name: clean(editingGameResult.runner_up_team_name), runner_up_business_unit: clean(editingGameResult.runner_up_business_unit),
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase.from('sports_day_game_results').upsert(payload, { onConflict: 'game_name' });
+    setSaving(false);
+    savingRef.current = false;
+    if (error) { setMessage(error.message || 'Game result could not be saved.'); return; }
+    setEditingGameResult(null);
+    setToast(`${editingGameResult.game_name} result updated`);
+    await loadGameResults();
+    window.setTimeout(() => setToast(''), 3500);
+  };
   const savePoints = async () => {
     if (!editing || savingRef.current) return;
     const value = Number(points);
@@ -242,6 +357,9 @@ export default function AdminApp() {
             <button type="button" className={activeView === 'registrations' ? 'active' : ''} onClick={() => { setActiveView('registrations'); setRegistrationSummary(null); setRegistrationFilter('All Games'); setRegistrationSearch(''); }}>
               <ClipboardList size={18}/> <span>REGISTRATIONS</span>
             </button>
+            <button type="button" className={activeView === 'games' ? 'active' : ''} onClick={() => setActiveView('games')}>
+              <Gamepad2 size={18}/> <span>GAMES</span>
+            </button>
           </nav>
         </aside>
         <div className="admin-dashboard-content">
@@ -268,13 +386,13 @@ export default function AdminApp() {
                 ))}
               </section>
             </>
-          ) : (
+          ) : activeView === 'registrations' ? (
             <>
               <div className="admin-heading"><div><span>GADGEON SPORTS DAY 2026</span><h1>REGISTRATIONS</h1></div><ClipboardList className="admin-heading-icon" size={72}/></div>
               {message && <div className="admin-error">{message}</div>}
               <section className="admin-registration-board">
                 <div className="admin-registration-heading">
-                  <div><span>PARTICIPANT REGISTRATIONS</span><h2>{registrationSummary ? `${registrationSummary.type === 'business' ? 'BUSINESS UNIT' : 'TEAM'}: ${registrationSummary.value}` : 'REGISTRATION SUMMARY'}</h2></div>
+                  <div><span>PARTICIPANT REGISTRATIONS</span><h2>{registrationSummary ? `${registrationSummary.type === 'business' ? 'BUSINESS UNIT' : registrationSummary.type === 'team' ? 'TEAM' : 'GAME'}: ${registrationSummary.value}` : 'REGISTRATION SUMMARY'}</h2></div>
                   <strong>{registrationSummary ? `${filteredRegistrations.length} registrations` : `${registrations.length} total`}</strong>
                 </div>
                 {loadingRegistrations ? <div className="admin-team-loading">Loading registrations...</div> : !registrationSummary ? (
@@ -294,6 +412,16 @@ export default function AdminApp() {
                       <div className="admin-summary-grid">
                         {teamSummary.map(([name, count]) => (
                           <button type="button" className="admin-summary-card" key={`team-${name}`} onClick={() => { setRegistrationSummary({ type: 'team', value: name }); setRegistrationFilter('All Games'); setRegistrationSearch(''); }}>
+                            <span>{name}</span><strong>{count}</strong><small>registrations</small>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="admin-summary-section admin-summary-game">
+                      <div className="admin-summary-title"><span>BY GAME</span><strong>{gameSummary.length} games</strong></div>
+                      <div className="admin-summary-grid">
+                        {gameSummary.map(([name, count]) => (
+                          <button type="button" className="admin-summary-card" key={`game-${name}`} onClick={() => { setRegistrationSummary({ type: 'game', value: name }); setRegistrationFilter(name); setRegistrationSearch(''); }}>
                             <span>{name}</span><strong>{count}</strong><small>registrations</small>
                           </button>
                         ))}
@@ -331,9 +459,76 @@ export default function AdminApp() {
                 )}
               </section>
             </>
+          ) : (
+            <>
+              <div className="admin-heading"><div><span>GADGEON SPORTS DAY 2026</span><h1>GAMES</h1></div><Gamepad2 className="admin-heading-icon" size={72}/></div>
+              {toast && <div className="admin-toast"><Check size={16}/>{toast}</div>}
+              {message && <div className="admin-error">{message}</div>}
+              <section className="admin-games-board">
+                <div className="admin-games-heading"><div><span>GAME RESULTS</span><h2>WINNER & RUNNERS UP</h2></div><strong>{allGames.length} games</strong></div>
+                {loadingGameResults ? <div className="admin-team-loading">Loading game results...</div> : (
+                  <div className="admin-games-grid">
+                    {allGames.map((gameName) => {
+                      const result = gameResults.find((item) => item.game_name === gameName);
+                      return (
+                        <article className="admin-game-card" key={gameName}>
+                          <div className="admin-game-card-head"><div className="admin-game-icon"><Trophy size={20}/></div><div><span>GAME</span><h3>{gameName}</h3></div></div>
+                          <div className="admin-game-results">
+                            <div className={result?.winner_name ? 'admin-result-row winner has-result' : 'admin-result-row winner'}><Medal size={16}/><div><span>WINNER</span><strong>{result?.winner_name || 'Not assigned'}</strong><small>{result?.winner_email || 'Email not added'} • {result?.winner_team_name || 'Team not added'} • {result?.winner_business_unit || 'BU not added'}</small></div></div>
+                            <div className={result?.runner_up_name ? 'admin-result-row runner-up has-result' : 'admin-result-row runner-up'}><Medal size={16}/><div><span>RUNNERS UP</span><strong>{result?.runner_up_name || 'Not assigned'}</strong><small>{result?.runner_up_email || 'Email not added'} • {result?.runner_up_team_name || 'Team not added'} • {result?.runner_up_business_unit || 'BU not added'}</small></div></div>
+                          </div>
+                          <button type="button" className="admin-game-edit" onClick={() => openGameResultEditor(gameName, result)}>EDIT RESULTS</button>
+                        </article>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            </>
           )}
         </div>
       </div>
+      <AnimatePresence>{editingGameResult && (
+        <motion.div className="admin-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) setEditingGameResult(null); }}>
+          <motion.div className="admin-game-modal" role="dialog" aria-modal="true" aria-labelledby="game-result-title" initial={{ y: 20, scale: .97 }} animate={{ y: 0, scale: 1 }}>
+            <button className="admin-modal-close" type="button" aria-label="Close" onClick={() => setEditingGameResult(null)} disabled={saving}><X/></button>
+            <span className="admin-kicker">GAME RESULT</span>
+            <h2 id="game-result-title">{editingGameResult.game_name}</h2>
+            <div className="admin-game-result-form">
+              <fieldset>
+                <legend><Medal size={16}/> WINNER</legend>
+                <label>Name<div className="admin-participant-search">
+                  <input value={winnerResultSearch} onChange={(event) => { const value = event.target.value; setWinnerResultSearch(value); setWinnerDropdownOpen(true); setEditingGameResult({ ...editingGameResult, winner_name: value || null, winner_email: null, winner_team_name: null, winner_business_unit: null }); }} onFocus={() => setWinnerDropdownOpen(true)} placeholder="Search registered winner" autoComplete="off"/>
+                  {winnerDropdownOpen && winnerResultSearch.trim() && <div className="admin-participant-options">
+                    {gameParticipants.filter((p) => String(p.email || '').toLowerCase() !== String(editingGameResult.runner_up_email || '').toLowerCase() && [p.name,p.email,p.team_name,p.business_unit].some((v) => String(v || '').toLowerCase().includes(winnerResultSearch.toLowerCase().trim()))).slice(0,8).map((participant) => (
+                      <button type="button" key={`${participant.email}-${participant.name}`} onClick={() => selectGameParticipant('winner', participant)}><strong>{participant.name}</strong><span>{participant.email || 'No email'}</span><small>{participant.team_name || 'No team'} • {participant.business_unit || 'No business unit'}</small></button>
+                    ))}
+                  </div>}
+                </div></label>
+                <label>Email<input value={editingGameResult.winner_email || ''} readOnly placeholder="Auto-filled from registration"/></label>
+                <label>Team Name<input value={editingGameResult.winner_team_name || ''} readOnly placeholder="Auto-filled from registration"/></label>
+                <label>Business Unit<input value={editingGameResult.winner_business_unit || ''} readOnly placeholder="Auto-filled from registration"/></label>
+              </fieldset>
+              <fieldset>
+                <legend><Medal size={16}/> RUNNERS UP</legend>
+                <label>Name<div className="admin-participant-search">
+                  <input value={runnerUpResultSearch} onChange={(event) => { const value = event.target.value; setRunnerUpResultSearch(value); setRunnerUpDropdownOpen(true); setEditingGameResult({ ...editingGameResult, runner_up_name: value || null, runner_up_email: null, runner_up_team_name: null, runner_up_business_unit: null }); }} onFocus={() => setRunnerUpDropdownOpen(true)} placeholder="Search registered runner-up" autoComplete="off"/>
+                  {runnerUpDropdownOpen && runnerUpResultSearch.trim() && <div className="admin-participant-options">
+                    {gameParticipants.filter((p) => String(p.email || '').toLowerCase() !== String(editingGameResult.winner_email || '').toLowerCase() && [p.name,p.email,p.team_name,p.business_unit].some((v) => String(v || '').toLowerCase().includes(runnerUpResultSearch.toLowerCase().trim()))).slice(0,8).map((participant) => (
+                      <button type="button" key={`${participant.email}-${participant.name}`} onClick={() => selectGameParticipant('runner-up', participant)}><strong>{participant.name}</strong><span>{participant.email || 'No email'}</span><small>{participant.team_name || 'No team'} • {participant.business_unit || 'No business unit'}</small></button>
+                    ))}
+                  </div>}
+                </div></label>
+                <label>Email<input value={editingGameResult.runner_up_email || ''} readOnly placeholder="Auto-filled from registration"/></label>
+                <label>Team Name<input value={editingGameResult.runner_up_team_name || ''} readOnly placeholder="Auto-filled from registration"/></label>
+                <label>Business Unit<input value={editingGameResult.runner_up_business_unit || ''} readOnly placeholder="Auto-filled from registration"/></label>
+              </fieldset>
+            </div>
+            {message && <div className="admin-error admin-game-result-error">{message}</div>}
+            <div className="admin-modal-actions"><button type="button" className="admin-cancel" onClick={() => setEditingGameResult(null)} disabled={saving}>CANCEL</button><button type="button" className="admin-save" onClick={saveGameResult} disabled={saving}>{saving ? 'SAVING...' : 'SAVE RESULT'}</button></div>
+          </motion.div>
+        </motion.div>
+      )}</AnimatePresence>
       <AnimatePresence>{editing && (
         <motion.div className="admin-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) setEditing(null); }}>
           <motion.div className="admin-edit-modal" role="dialog" aria-modal="true" aria-labelledby="edit-team-title" initial={{ y: 20, scale: .97 }} animate={{ y: 0, scale: 1 }}>
