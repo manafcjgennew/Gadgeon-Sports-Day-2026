@@ -23,6 +23,7 @@ export function RegistrationModal({ open, onClose }: RegistrationModalProps) {
   const [captchaToken, setCaptchaToken] = useState('');
   const [captchaMessage, setCaptchaMessage] = useState('');
   const widgetId = useRef<string | undefined>(undefined);
+  const submissionInFlight = useRef(false);
   const widgetContainer = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
 
@@ -37,7 +38,11 @@ export function RegistrationModal({ open, onClose }: RegistrationModalProps) {
         theme: 'dark',
         appearance: 'always',
         callback: (token) => { setCaptchaToken(token); setCaptchaMessage(''); },
-        'expired-callback': () => { setCaptchaToken(''); setCaptchaMessage('CAPTCHA verification expired. Please try again.'); },
+        'expired-callback': () => {
+          setCaptchaToken('');
+          setCaptchaMessage('CAPTCHA verification expired. Please verify again.');
+          if (widgetId.current && window.turnstile) window.turnstile.reset(widgetId.current);
+        },
         'error-callback': () => { setCaptchaToken(''); setCaptchaMessage('Verification failed. Please try again.'); },
       });
     }).catch(() => setCaptchaMessage('Verification failed. Please try again.'));
@@ -70,7 +75,7 @@ export function RegistrationModal({ open, onClose }: RegistrationModalProps) {
   };
 
   const handleConfirm = async () => {
-    if (status === 'processing') return;
+    if (status === 'processing' || submissionInFlight.current) return;
     if (!captchaToken) {
       setCaptchaMessage('Please complete CAPTCHA verification. Return to the form if verification is unavailable.');
       return;
@@ -78,12 +83,14 @@ export function RegistrationModal({ open, onClose }: RegistrationModalProps) {
     setSubmissionMessage('');
     setCaptchaMessage('');
     setStatus('processing');
+    submissionInFlight.current = true;
     const result = await submitRegistration({
       email: form.email.trim(),
       name: form.name.trim().replace(/\s+/g, ' '),
       businessUnit: form.businessUnit,
       eventNames: selectedEvents,
     }, captchaToken);
+    submissionInFlight.current = false;
     if (result.status === 'success') {
       setStatus('success');
       setRegisteredEvents(result.registered || selectedEvents);
@@ -96,10 +103,16 @@ export function RegistrationModal({ open, onClose }: RegistrationModalProps) {
       setRegisteredEvents(result.registered || []);
       setDuplicateEvents(result.duplicates || []);
       setFailedEvents(result.failed || []);
-      setStatus(result.status === 'duplicate' ? 'duplicate' : result.status === 'partial' ? 'partial' : 'error');
       setSubmissionMessage(result.message || 'The registration could not be submitted. Please try again.');
       setCaptchaToken('');
       if (widgetId.current && window.turnstile) window.turnstile.reset(widgetId.current);
+      if (result.status === 'captcha' || result.status === 'network' || result.status === 'database' || result.status === 'configuration') {
+        setStatus('idle');
+        setStage('form');
+        setCaptchaMessage(result.message || 'Please complete CAPTCHA verification again.');
+      } else {
+        setStatus(result.status === 'duplicate' ? 'duplicate' : result.status === 'partial' ? 'partial' : 'error');
+      }
     }
   };
 

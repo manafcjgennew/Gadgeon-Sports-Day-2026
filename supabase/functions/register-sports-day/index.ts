@@ -42,7 +42,7 @@ Deno.serve(async (request: Request) => {
     return new Response(JSON.stringify({ success: false, message: 'Please provide valid values for all required fields.' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
-  let verifyResult: { success: boolean; 'error-codes'?: string[]; hostname?: string };
+  let verifyResult: { success: boolean; action?: string; hostname?: string; 'error-codes'?: string[] };
   try {
     const verifyBody = new URLSearchParams({ secret: turnstileSecret, response: token });
     const clientIp = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
@@ -52,26 +52,51 @@ Deno.serve(async (request: Request) => {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: verifyBody,
     });
+    if (!verifyResponse.ok) {
+      console.error('[registration] Turnstile siteverify returned an unsuccessful HTTP response.', { status: verifyResponse.status });
+      return new Response(JSON.stringify({ success: false, errorCode: 'turnstile_service_error', message: 'CAPTCHA verification service is unavailable. Please try again.' }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
     verifyResult = await verifyResponse.json();
   } catch {
-    return new Response(JSON.stringify({ success: false, message: 'CAPTCHA verification service is unavailable. Please try again.' }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    console.error('[registration] Turnstile siteverify request threw an error.');
+    return new Response(JSON.stringify({ success: false, errorCode: 'turnstile_service_error', message: 'CAPTCHA verification service is unavailable. Please try again.' }), { status: 503, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
   if (!verifyResult.success) {
-    const expired = verifyResult['error-codes']?.some((code) => code.includes('timeout') || code.includes('expired'));
-    return new Response(JSON.stringify({ success: false, message: expired ? 'CAPTCHA verification expired. Please try again.' : 'Verification failed. Please try again.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    const errorCodes = verifyResult['error-codes'] ?? [];
+    console.error('[registration] Turnstile verification failed.', { success: false, errorCodes });
+
+    let errorCode = 'turnstile_verification_failed';
+    let message = 'Verification failed. Please try again.';
+    let status = 403;
+
+    if (errorCodes.includes('missing-input-secret') || errorCodes.includes('invalid-input-secret')) {
+      errorCode = 'turnstile_secret_invalid';
+      message = 'CAPTCHA verification is temporarily unavailable.';
+      status = 500;
+    } else if (errorCodes.includes('timeout-or-duplicate')) {
+      errorCode = 'turnstile_token_expired_or_reused';
+      message = 'CAPTCHA verification expired or was already used. Please verify again.';
+    } else if (errorCodes.includes('missing-input-response') || errorCodes.includes('invalid-input-response')) {
+      errorCode = 'turnstile_token_invalid';
+      message = 'Please complete CAPTCHA verification again.';
+    }
+
+    return new Response(JSON.stringify({ success: false, errorCode, message }), { status, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
-  const verify = verifyResult as { success: boolean; action?: string; hostname?: string; 'error-codes'?: string[] };
-  if (verify.action !== 'sports_registration') {
-    return new Response(JSON.stringify({ success: false, message: 'Verification failed. Please try again.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  const verify = verifyResult;
+  if (verify.action && verify.action !== 'sports_registration') {
+    console.error('[registration] Turnstile action mismatch.', { returnedAction: verify.action, expectedAction: 'sports_registration' });
+    return new Response(JSON.stringify({ success: false, errorCode: 'turnstile_action_mismatch', message: 'CAPTCHA verification does not match this registration form. Please verify again.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
   const allowedHostnames = (Deno.env.get('TURNSTILE_HOSTNAMES') ?? '')
     .split(',')
     .map((hostname) => hostname.trim().toLowerCase())
     .filter(Boolean);
   if (allowedHostnames.length && (!verify.hostname || !allowedHostnames.includes(verify.hostname.toLowerCase()))) {
-    return new Response(JSON.stringify({ success: false, message: 'Verification failed. Please try again.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    console.error('[registration] Turnstile hostname mismatch.', { hostnameAllowed: false });
+    return new Response(JSON.stringify({ success: false, errorCode: 'turnstile_hostname_mismatch', message: 'CAPTCHA verification is not valid for this website. Please try again.' }), { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
   }
 
   const supabase = createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } });

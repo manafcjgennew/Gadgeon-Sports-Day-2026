@@ -22,6 +22,7 @@ export type RegistrationPayload = { email: string; name: string; businessUnit: s
 export type RegistrationResult = {
   status: 'success' | 'captcha' | 'duplicate' | 'partial' | 'configuration' | 'permission' | 'network' | 'database';
   message?: string;
+  errorCode?: string;
   registered?: string[];
   duplicates?: string[];
   failed?: string[];
@@ -49,7 +50,7 @@ export async function submitRegistration(payload: RegistrationPayload, turnstile
     if (error) {
       const context = error.context as Response | undefined;
       let responseMessage = '';
-      let responseData: { message?: string; registered?: string[]; duplicates?: string[]; failed?: string[] } = {};
+      let responseData: { message?: string; errorCode?: string; registered?: string[]; duplicates?: string[]; failed?: string[] } = {};
       if (context && typeof context.clone === 'function') {
         try {
           responseData = await context.clone().json();
@@ -59,10 +60,15 @@ export async function submitRegistration(payload: RegistrationPayload, turnstile
       const status = context?.status;
       if (status === 207) return { status: 'partial', message: responseMessage, registered: responseData.registered || [], duplicates: responseData.duplicates || [], failed: responseData.failed || [] };
       if (status === 409) return { status: 'duplicate', message: responseMessage || 'You have already registered for this event using this email address. Each participant can register only once for the same event. Please select another event if you wish to participate in additional events.' };
-      if (status === 403) return { status: 'captcha', message: responseMessage || 'Verification failed. Please try again.' };
+      if (status === 403) return { status: 'captcha', errorCode: responseData.errorCode, message: responseMessage || 'Verification failed. Please try again.' };
       if (status === 400) return { status: 'captcha', message: responseMessage || 'Please complete CAPTCHA verification.' };
       if (status === 404) return { status: 'configuration', message: 'Registration service is not deployed. Please deploy the register-sports-day Edge Function.' };
       if (status === 401 || status === 405) return { status: 'configuration', message: responseMessage || 'Registration service configuration is invalid.' };
+      if (responseData.errorCode?.startsWith('turnstile_')) {
+        return responseData.errorCode === 'turnstile_secret_invalid'
+          ? { status: 'configuration', errorCode: responseData.errorCode, message: responseMessage || 'CAPTCHA verification is temporarily unavailable.' }
+          : { status: 'captcha', errorCode: responseData.errorCode, message: responseMessage || 'Please complete CAPTCHA verification again.' };
+      }
       if (status >= 500) return { status: 'database', message: responseMessage || 'The registration database service is temporarily unavailable.' };
       return { status: 'database', message: responseMessage || error.message || 'The registration could not be submitted.' };
     }

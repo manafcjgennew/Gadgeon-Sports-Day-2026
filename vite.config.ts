@@ -20,12 +20,19 @@ export default defineConfig(({ mode }) => {
     || env.SUPABASE_PUBLISHABLE_KEY
     || ''
   ).trim()
+  const turnstileSiteKey = (
+    env.VITE_TURNSTILE_SITE_KEY
+    || env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+    || env.CLOUDFLARE_TURNSTILE_SITE_KEY
+    || ''
+  ).trim()
 
   return {
     plugins: [react(), tailwindcss()],
     define: {
       'import.meta.env.VITE_SUPABASE_URL': JSON.stringify(supabaseUrl),
       'import.meta.env.VITE_SUPABASE_ANON_KEY': JSON.stringify(supabaseAnonKey),
+      'import.meta.env.VITE_TURNSTILE_SITE_KEY': JSON.stringify(turnstileSiteKey),
     },
   }
 })
