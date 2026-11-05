@@ -29,6 +29,15 @@ type GameResult = {
   runner_up_team_name: string | null;
   runner_up_business_unit: string | null;
 };
+type CaptainDetail = {
+  id?: string;
+  team_id: string;
+  role: 'captain' | 'vice_captain';
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  image_url: string | null;
+};
 
 function GoogleLogo() {
   return (
@@ -62,7 +71,7 @@ export default function AdminApp() {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
   const [oauthLoading, setOauthLoading] = useState(false);
-  const [activeView, setActiveView] = useState<'dashboard' | 'registrations' | 'games'>('dashboard');
+  const [activeView, setActiveView] = useState<'dashboard' | 'registrations' | 'games' | 'captains'>('dashboard');
   const [gameResults, setGameResults] = useState<GameResult[]>([]);
   const [loadingGameResults, setLoadingGameResults] = useState(false);
   const [editingGameResult, setEditingGameResult] = useState<GameResult | null>(null);
@@ -70,6 +79,9 @@ export default function AdminApp() {
   const [runnerUpResultSearch, setRunnerUpResultSearch] = useState('');
   const [winnerDropdownOpen, setWinnerDropdownOpen] = useState(false);
   const [runnerUpDropdownOpen, setRunnerUpDropdownOpen] = useState(false);
+  const [captains, setCaptains] = useState<CaptainDetail[]>([]);
+  const [loadingCaptains, setLoadingCaptains] = useState(false);
+  const [editingCaptain, setEditingCaptain] = useState<CaptainDetail | null>(null);
   const savingRef = useRef(false);
 
   const checkAdmin = async () => {
@@ -145,6 +157,18 @@ export default function AdminApp() {
     setGameResults((data || []) as GameResult[]);
   };
 
+  const loadCaptains = async () => {
+    if (!supabase) return;
+    setLoadingCaptains(true);
+    const { data, error } = await supabase
+      .from('sports_day_captains')
+      .select('id,team_id,role,name,email,phone,image_url')
+      .order('role');
+    setLoadingCaptains(false);
+    if (error) setMessage('Captain details could not be loaded.');
+    else setCaptains((data || []) as CaptainDetail[]);
+  };
+
   useEffect(() => {
     queueMicrotask(() => { void checkAdmin(); });
     const listener = supabase?.auth.onAuthStateChange((event) => {
@@ -160,6 +184,7 @@ export default function AdminApp() {
       void loadTeams();
       void loadRegistrations();
       void loadGameResults();
+      void loadCaptains();
     });
   }, [status]);
 
@@ -323,6 +348,30 @@ export default function AdminApp() {
     await loadGameResults();
     window.setTimeout(() => setToast(''), 3500);
   };
+  const saveCaptain = async () => {
+    if (!editingCaptain || !supabase || savingRef.current) return;
+    savingRef.current = true;
+    setSaving(true);
+    setMessage('');
+    const payload = {
+      team_id: editingCaptain.team_id,
+      role: editingCaptain.role,
+      name: editingCaptain.name?.trim() || null,
+      email: editingCaptain.email?.trim().toLowerCase() || null,
+      phone: editingCaptain.phone?.trim() || null,
+      image_url: editingCaptain.image_url?.trim() || null,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase.from('sports_day_captains').upsert(payload, { onConflict: 'team_id,role' });
+    setSaving(false);
+    savingRef.current = false;
+    if (error) { setMessage(error.message || 'Captain details could not be saved.'); return; }
+    setEditingCaptain(null);
+    setToast('Captain details updated');
+    await loadCaptains();
+    window.setTimeout(() => setToast(''), 3500);
+  };
+
   const savePoints = async () => {
     if (!editing || savingRef.current) return;
     const value = Number(points);
@@ -359,6 +408,9 @@ export default function AdminApp() {
             </button>
             <button type="button" className={activeView === 'games' ? 'active' : ''} onClick={() => setActiveView('games')}>
               <Gamepad2 size={18}/> <span>GAMES</span>
+            </button>
+            <button type="button" className={activeView === 'captains' ? 'active' : ''} onClick={() => setActiveView('captains')}>
+              <Trophy size={18}/> <span>CAPTAINS</span>
             </button>
           </nav>
         </aside>
@@ -459,6 +511,20 @@ export default function AdminApp() {
                 )}
               </section>
             </>
+          ) : activeView === 'captains' ? (
+            <>
+              <div className="admin-heading"><div><span>GADGEON SPORTS DAY 2026</span><h1>TEAM CAPTAINS</h1></div><Trophy className="admin-heading-icon" size={72}/></div>
+              {toast && <div className="admin-toast"><Check size={16}/>{toast}</div>}
+              {message && <div className="admin-error">{message}</div>}
+              <section className="admin-team-board">
+                <div className="admin-team-head"><span>Team</span><span>Captain</span><span>Vice-Captain</span><span>Action</span></div>
+                {loadingCaptains ? <div className="admin-team-loading">Loading captain details...</div> : teams.map((team) => {
+                  const captain = captains.find((item) => item.team_id === team.id && item.role === 'captain');
+                  const vice = captains.find((item) => item.team_id === team.id && item.role === 'vice_captain');
+                  return <div className="admin-team-row" key={team.id}><b>TEAM</b><strong>{team.name}</strong><span>{captain?.name || 'Captain not added'}<br/><small>{vice?.name || 'Vice-Captain not added'}</small></span><span><button type="button" onClick={() => setEditingCaptain(captain || { team_id: team.id, role: 'captain', name: null, email: null, phone: null, image_url: null })}>EDIT CAPTAIN</button><button type="button" onClick={() => setEditingCaptain(vice || { team_id: team.id, role: 'vice_captain', name: null, email: null, phone: null, image_url: null })}>EDIT VICE</button></span></div>;
+                })}
+              </section>
+            </>
           ) : (
             <>
               <div className="admin-heading"><div><span>GADGEON SPORTS DAY 2026</span><h1>GAMES</h1></div><Gamepad2 className="admin-heading-icon" size={72}/></div>
@@ -488,6 +554,25 @@ export default function AdminApp() {
           )}
         </div>
       </div>
+      <AnimatePresence>{editingCaptain && (
+        <motion.div className="admin-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) setEditingCaptain(null); }}>
+          <motion.div className="admin-game-modal" role="dialog" aria-modal="true" aria-labelledby="captain-editor-title" initial={{ y: 20, scale: .97 }} animate={{ y: 0, scale: 1 }}>
+            <button className="admin-modal-close" type="button" aria-label="Close" onClick={() => setEditingCaptain(null)} disabled={saving}><X/></button>
+            <span className="admin-kicker">{editingCaptain.role === 'captain' ? 'CAPTAIN DETAILS' : 'VICE-CAPTAIN DETAILS'}</span>
+            <h2 id="captain-editor-title">{teams.find((team) => team.id === editingCaptain.team_id)?.name || 'Team leader'}</h2>
+            <div className="admin-game-result-form">
+              <fieldset>
+                <legend>Trophy PROFILE</legend>
+                <label>Name<input value={editingCaptain.name || ''} onChange={(event) => setEditingCaptain({ ...editingCaptain, name: event.target.value })}/></label>
+                <label>Email<input type="email" value={editingCaptain.email || ''} onChange={(event) => setEditingCaptain({ ...editingCaptain, email: event.target.value })}/></label>
+                <label>Contact number<input value={editingCaptain.phone || ''} onChange={(event) => setEditingCaptain({ ...editingCaptain, phone: event.target.value })}/></label>
+                <label>Profile image URL<input value={editingCaptain.image_url || ''} onChange={(event) => setEditingCaptain({ ...editingCaptain, image_url: event.target.value })} placeholder="/images/profile.jpg or https://..."/></label>
+              </fieldset>
+            </div>
+            <div className="admin-game-modal-actions"><button type="button" className="admin-modal-cancel" onClick={() => setEditingCaptain(null)} disabled={saving}>CANCEL</button><button type="button" className="admin-modal-save" onClick={saveCaptain} disabled={saving}>{saving ? 'SAVING...' : 'SAVE DETAILS'}</button></div>
+          </motion.div>
+        </motion.div>
+      )}</AnimatePresence>
       <AnimatePresence>{editingGameResult && (
         <motion.div className="admin-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onMouseDown={(event) => { if (event.target === event.currentTarget && !saving) setEditingGameResult(null); }}>
           <motion.div className="admin-game-modal" role="dialog" aria-modal="true" aria-labelledby="game-result-title" initial={{ y: 20, scale: .97 }} animate={{ y: 0, scale: 1 }}>

@@ -36,10 +36,17 @@ type Database = {
         };
         Relationships: [];
       };
+      sports_day_captains: {
+        Row: { id: string; team_id: string; role: 'captain' | 'vice_captain'; name: string | null; email: string | null; phone: string | null; image_url: string | null; updated_at: string };
+        Insert: { id?: string; team_id: string; role: 'captain' | 'vice_captain'; name?: string | null; email?: string | null; phone?: string | null; image_url?: string | null; updated_at?: string };
+        Update: { id?: string; team_id?: string; role?: 'captain' | 'vice_captain'; name?: string | null; email?: string | null; phone?: string | null; image_url?: string | null; updated_at?: string };
+        Relationships: [];
+      };
     };
     Views: { [_ in never]: never };
     Functions: {
       is_sports_day_admin: { Args: Record<string, never>; Returns: boolean };
+      is_authorized_captains_viewer: { Args: Record<string, never>; Returns: boolean };
       list_sports_day_registrations: { Args: Record<string, never>; Returns: unknown };
     };
     Enums: { [_ in never]: never };
