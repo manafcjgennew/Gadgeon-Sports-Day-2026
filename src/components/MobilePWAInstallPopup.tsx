@@ -101,9 +101,9 @@ export default function MobilePWAInstallPopup({ suppressed = false }: { suppress
             role="dialog"
             aria-modal="true"
             aria-labelledby="mobile-pwa-title"
-            initial={reducedMotion ? false : { opacity: 0, scale: .94, y: 18 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: .96, y: 12 }}
+            initial={reducedMotion ? false : { opacity: 0, scale: .88, y: 24, filter: 'blur(8px)' }}
+            animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
+            exit={reducedMotion ? { opacity: 0 } : { opacity: 0, scale: .96, y: 12, filter: 'blur(4px)' }}
             transition={{ duration: .32, ease: 'easeOut' }}
           >
             <button type="button" className="mobile-pwa-close" aria-label="Close Add to Home Screen popup" onClick={closePopup}><X size={18}/></button>
