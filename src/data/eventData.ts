@@ -34,7 +34,7 @@ export const schedule = [
   { time: 'November 14, 2026 onwards', title: 'Board Games', venue: 'Gadgeon SmartCity', status: 'Onwards' },
   { time: 'November 28, 2026', title: 'Badminton', venue: 'USC Kakkanad', status: 'Scheduled' },
   { time: 'December 1–3, 2026', title: 'Cricket', venue: 'Backyard Kakkanad', status: 'Scheduled' },
-  { time: 'December 6, 2026', title: 'Sports Day Grand Finale', venue: 'The Indian Public School, Kakkanad', status: 'Grand Finale' },
+  { time: 'December 6, 2026', title: 'Sports Day Grand Finale', venue: 'Venue not yet finalized', status: 'Grand Finale' },
 ];
 
 export const gallery = [
