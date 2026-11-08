@@ -28,7 +28,7 @@ export const teams = [
 export const leaderboard = teams.map((team) => ({ ...team }));
 
 export const schedule = [
-  { time: 'November 9–13, 2026', title: 'Football', venue: 'USC Kakkanad', status: 'Scheduled' },
+  { time: 'November 9–13, 2026 · 7 PM', title: 'Football', venue: 'USC Kakkanad', status: 'Scheduled' },
   { time: 'November 10–12, 2026', title: 'Table Tennis', venue: 'USC Kakkanad', status: 'Scheduled' },
   { time: 'November 9, 2026 onwards', title: 'Online Games', venue: 'Venue not specified', status: 'Onwards' },
   { time: 'November 14, 2026 onwards', title: 'Board Games', venue: 'Gadgeon SmartCity', status: 'Onwards' },

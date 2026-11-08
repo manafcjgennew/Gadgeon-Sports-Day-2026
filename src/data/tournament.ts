@@ -13,7 +13,7 @@ export const rankedTeams = teams.every((team) => team.points === teams[0].points
   : [...teams].sort((a, b) => b.points - a.points);
 
 export const eventSchedule: EventScheduleItem[] = [
-  { id:'football',shortDate:'NOV 09–13',date:'November 9–13, 2026',title:'Football',category:'Outdoor Sports',venue:'USC Kakkanad',description:'Experience the thrill of football, teamwork, strategy, and competition.',image:'/images/football.jpg' },
+  { id:'football',shortDate:'NOV 09–13',date:'November 9–13, 2026 · 7 PM',title:'Football',category:'Outdoor Sports',venue:'USC Kakkanad',description:'Experience the thrill of football, teamwork, strategy, and competition.',image:'/images/football.jpg' },
   { id:'online',shortDate:'NOV 09 ONWARDS',date:'November 9, 2026 onwards',title:'Online Games',category:'Online Gaming',venue:'Venue not specified',description:'Challenge your colleagues, sharpen your gaming skills, and compete for digital glory.',games:['PES','LUDO','CARROMS','BGMI','Mini Militia'],image:'/images/gaming.jpg' },
   { id:'table-tennis',shortDate:'NOV 10–12',date:'November 10–12, 2026',title:'Table Tennis',category:'Indoor Sports',venue:'USC Kakkanad',description:'Fast reactions, precision, and incredible sporting action.',image:'/images/table-tennis.jpg' },
   { id:'board',shortDate:'NOV 14 ONWARDS',date:'November 14, 2026 onwards',title:'Board Games',category:'Indoor Games',venue:'Gadgeon SmartCity',description:'Strategy, patience, and intelligence. Every move counts.',games:['Carroms','Chess'],image:'/images/board-games.jpg' },
