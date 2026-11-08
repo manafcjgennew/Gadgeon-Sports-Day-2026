@@ -6,7 +6,7 @@ export const registrationConfig = {
     { group: 'Sports', options: ['Football', 'Badminton', 'Cricket', 'Table Tennis'] },
     { group: 'Athletics', options: ['100m Run', '200m Run', '400m Run', 'Skipping Rope'] },
     { group: 'Board Games', options: ['Carroms', 'Chess'] },
-    { group: 'Online Games', options: ['PES', 'Ludo', 'Carroms', 'BGMI'] },
+    { group: 'Online Games', options: ['PES', 'Ludo', 'Carroms', 'BGMI', 'Mini Militia'] },
     { group: 'PS5 Games', options: ['Football: EA Sports FC 27', 'Cricket: Cricket 26', 'Wrestling & Combat: WWE 2K26 & UFC 5', 'Racing: WRC Generations & Dirt 5'] },
   ],
 };
