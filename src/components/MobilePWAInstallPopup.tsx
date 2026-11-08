@@ -18,10 +18,10 @@ function isMobileDevice() {
   return iosOrAndroid || mobileTouch;
 }
 
-function isIosSafari() {
+function isIosBrowser() {
   const ua = navigator.userAgent;
   const ios = /iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  return ios && !/CriOS|FxiOS|OPiOS|EdgiOS/.test(ua);
+  return ios;
 }
 
 function isInstalled() {
@@ -40,7 +40,7 @@ export default function MobilePWAInstallPopup({ suppressed = false }: { suppress
   const [promptEvent, setPromptEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [androidStatus, setAndroidStatus] = useState('');
   const mobile = isMobileDevice();
-  const iosSafari = isIosSafari();
+  const iosBrowser = isIosBrowser();
 
   useEffect(() => {
     if (!mobile || isInstalled() || wasRecentlyDismissed() || suppressed) return;
@@ -110,10 +110,10 @@ export default function MobilePWAInstallPopup({ suppressed = false }: { suppress
             <img src="/gadgeon-sports-day-192.png" alt="Gadgeon Sports Day" className="mobile-pwa-icon"/>
             <span className="mobile-pwa-kicker">SPORTS DAY 2026</span>
             <h2 id="mobile-pwa-title">Add Gadgeon Sports Day 2026 to your Home Screen</h2>
-            {iosSafari ? (
+            {iosBrowser ? (
               <>
                 <p>Tap the Share button, then 'Add to Home Screen'</p>
-                <div className="mobile-pwa-share-hint"><Share size={20}/><span>Safari Share</span></div>
+                <div className="mobile-pwa-share-hint"><Share size={20}/><span>Share menu</span></div>
               </>
             ) : (
               <>
