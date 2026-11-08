@@ -8,7 +8,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const DISMISSAL_KEY = 'sports-day-pwa-popup-dismissed-at';
-const DISMISSAL_DURATION = 7 * 24 * 60 * 60 * 1000;
+const DISMISSAL_DURATION = 24 * 60 * 60 * 1000;
 
 function isMobileDevice() {
   if (window.matchMedia('(display-mode: standalone)').matches) return false;
